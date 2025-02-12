@@ -2,6 +2,8 @@
 
 A **PyQt5-based** desktop application for annotating images with **bounding boxes**. Each bounding box can be labeled with a text tag, drawn in a **distinct color**, and displayed **outside** (above-left corner) of the bounding box.
 
+![Screenshot of Annotation Tool](screenshots/screenshot.png)
+
 This tool supports:
 - Opening **multiple images** at once.
 - Navigating through images using **Space** or **Right Arrow** (next) and **Left Arrow** (previous).
@@ -84,8 +86,6 @@ python main.py
 - The right-hand list displays annotations; double-click or use the buttons to label or delete.
 - Press **Space** or **Right Arrow** to go to the next image, **Left Arrow** to go back.
 - Zoom with **Ctrl** or **Shift** + scroll wheel.
-
-![Screenshot of Annotation Tool](screenshots/screenshot.png)
 
 ---
 
