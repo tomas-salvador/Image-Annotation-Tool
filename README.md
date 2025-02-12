@@ -56,18 +56,19 @@ A set of **10 predefined colors** is used for bounding boxes. Once the 10th colo
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/<your-username>/<repository-name>.git
-   cd <repository-name>
+   git clone https://github.com/tomas-salvador/Image-Annotation-Tool
+   cd <Image-Annotation-Tool>
 Install dependencies:
-
 ```bash
 pip install pyqt5
+```
 Or use an environment of your choice (e.g., Conda).
 
 ### Run the tool:
 
 ```bash
 python main.py
+```
 (Replace `main.py` with your actual script name if different.)
 
 ### Usage:
