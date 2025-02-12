@@ -47,10 +47,16 @@ A set of **10 predefined colors** is used for bounding boxes. Once the 10th colo
 - **Ctrl** or **Shift** + mouse wheel zooms around the **mouse position**.  
 - If you only scroll without Ctrl or Shift, it will not zoom (default behavior).
 
+## Multi-Language Support
+
+This tool supports **six languages** by default: English, Spanish, German, French, Portuguese and Russian.  
+If you request a language that's not in the list, it automatically falls back to **English**.  
+You can specify the language in the code (e.g., `viewer.set_language("es")`) or create a button/menu for switching at runtime.
+
 ## Tested Platforms
 
 - **Ubuntu**: Verified to work on Python 3.x with PyQt5 installed.
-- Likely works on **Windows** and **macOS** as well, but not extensively tested.
+- Likely works on **Windows** and **macOS** as well, but not tested.
 
 ## Installation and Usage
 
@@ -73,11 +79,13 @@ python main.py
 
 ### Usage:
 
-- Click **"Abrir imagen(es)"** to open one or more images.
+- Click **"Open Image(s)"** to open one or more images (with **Shift**).
 - Select or create bounding boxes in the left pane.
 - The right-hand list displays annotations; double-click or use the buttons to label or delete.
 - Press **Space** or **Right Arrow** to go to the next image, **Left Arrow** to go back.
 - Zoom with **Ctrl** or **Shift** + scroll wheel.
+
+![Screenshot of Annotation Tool](screenshots/screenshot.png)
 
 ---
 
