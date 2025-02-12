@@ -9,29 +9,88 @@ from PyQt5.QtGui import QPixmap, QPen, QColor, QFont, QBrush
 from PyQt5.QtCore import Qt, QRectF, QPointF
 
 ###############################################################################
-#                         ResizableAnnotationRect                             #
+#                            MULTI-LANGUAGE DICTIONARY                        #
 ###############################################################################
+STRINGS = {
+    "en": {
+        "window_title": "Image Annotation Tool",
+        "open_images": "Open Image(s)",
+        "assign_label": "Assign Label to Selected",
+        "delete_annotation": "Delete Annotation",
+        "rect_no_label": "No Label",
+        "dialog_edit_label": "Edit Label",
+        "dialog_new_label": "Enter new label:",
+        "nav_title": "Image {current} of {total} - {filename}"
+    },
+    "es": {
+        "window_title": "Herramienta de Anotación de Imágenes",
+        "open_images": "Abrir imagen(es)",
+        "assign_label": "Asignar etiqueta a seleccionados",
+        "delete_annotation": "Eliminar anotación",
+        "rect_no_label": "Sin nombre",
+        "dialog_edit_label": "Editar Etiqueta",
+        "dialog_new_label": "Ingrese nueva etiqueta:",
+        "nav_title": "Imagen {current} de {total} - {filename}"
+    },
+    "de": {
+        "window_title": "Bild-Anmerkungswerkzeug",
+        "open_images": "Bild(er) öffnen",
+        "assign_label": "Beschriftung zuweisen",
+        "delete_annotation": "Anmerkung löschen",
+        "rect_no_label": "Kein Label",
+        "dialog_edit_label": "Label bearbeiten",
+        "dialog_new_label": "Neues Label eingeben:",
+        "nav_title": "Bild {current} von {total} - {filename}"
+    },
+    "fr": {
+        "window_title": "Outil d'annotation d'images",
+        "open_images": "Ouvrir Image(s)",
+        "assign_label": "Attribuer une étiquette à la sélection",
+        "delete_annotation": "Supprimer l'annotation",
+        "rect_no_label": "Pas d'étiquette",
+        "dialog_edit_label": "Modifier l'étiquette",
+        "dialog_new_label": "Entrez une nouvelle étiquette :",
+        "nav_title": "Image {current} sur {total} - {filename}"
+    },
+    "pt": {
+        "window_title": "Ferramenta de Anotação de Imagens",
+        "open_images": "Abrir Imagem(ns)",
+        "assign_label": "Atribuir rótulo aos selecionados",
+        "delete_annotation": "Excluir anotação",
+        "rect_no_label": "Sem rótulo",
+        "dialog_edit_label": "Editar Rótulo",
+        "dialog_new_label": "Digite um novo rótulo:",
+        "nav_title": "Imagem {current} de {total} - {filename}"
+    },
+    "ru": {
+        "window_title": "Инструмент аннотации изображений",
+        "open_images": "Открыть изображение(я)",
+        "assign_label": "Назначить метку выделенным",
+        "delete_annotation": "Удалить аннотацию",
+        "rect_no_label": "Без метки",
+        "dialog_edit_label": "Редактировать метку",
+        "dialog_new_label": "Введите новую метку:",
+        "nav_title": "Изображение {current} из {total} - {filename}"
+    }
+}
 
+###############################################################################
+#                        RESIZABLE ANNOTATION RECTANGLE                       #
+###############################################################################
 class ResizableAnnotationRect(QGraphicsPixmapItem):
     """
-    Rectángulo de anotación que permite redimensionar arrastrando los bordes,
-    utiliza un color fijo y muestra la etiqueta por fuera (arriba-izquierda).
+    A simplified bounding-box item with color and a text label
+    displayed outside (above-left).
     """
-    HANDLE_SIZE = 8  # Tamaño en píxeles para detectar los "handles" de redimensionado
+    HANDLE_SIZE = 8
 
-    def __init__(self, rect: QRectF, label: str = "", color: QColor = QColor(255, 0, 0)):
+    def __init__(self, rect: QRectF, label="", color=QColor(255, 0, 0)):
         super().__init__()
         self.rect_item = QGraphicsRectItem(rect, parent=self)
         self.label = label
         self.color = color
 
-        # Flags para redimensionar
-        self._resizing = False
-        self._resizeDir = None
-        self._startPos = None
-        self._origRect = None
-
-        # QGraphicsTextItem para la etiqueta
+        # Graphics text for the label
         self.textItem = QGraphicsTextItem(self.label, parent=self)
         self.textItem.setDefaultTextColor(Qt.white)
         font = QFont()
@@ -39,7 +98,13 @@ class ResizableAnnotationRect(QGraphicsPixmapItem):
         self.textItem.setFont(font)
         self.textItem.setZValue(2)
 
-        # Ajustes iniciales
+        # Resizing flags
+        self._resizing = False
+        self._resizeDir = None
+        self._startPos = None
+        self._origRect = None
+
+        # Initialize
         self.updateLabelPosition()
         pen = QPen(self.color, 2)
         self.rect_item.setPen(pen)
@@ -56,18 +121,16 @@ class ResizableAnnotationRect(QGraphicsPixmapItem):
         return self.rect_item.rect()
 
     def updateLabelPosition(self):
-        """
-        Etiqueta por fuera (arriba-izquierda) del rectángulo.
-        """
-        rect = self.rect()
-        textRect = self.textItem.boundingRect()
+        """ Place the label above-left of the rectangle. """
         margin = 2
-        x = rect.left()
-        y = rect.top() - textRect.height() - margin
+        r = self.rect_item.rect()
+        textRect = self.textItem.boundingRect()
+        x = r.left()
+        y = r.top() - textRect.height() - margin
         self.textItem.setPos(x, y)
 
     def paint(self, painter, option, widget=None):
-        # No dibujamos pixmap ni nada; la parte visual la hace rect_item + textItem
+        # We won't paint the pixmap item. The rect_item and textItem handle it.
         pass
 
     def mousePressEvent(self, event):
@@ -112,10 +175,9 @@ class ResizableAnnotationRect(QGraphicsPixmapItem):
             super().mouseReleaseEvent(event)
 
     def getResizeHandle(self, pos: QPointF):
-        r = self.rect()
         margin = self.HANDLE_SIZE
+        r = self.rect_item.rect()
         left, right, top, bottom = r.left(), r.right(), r.top(), r.bottom()
-
         if abs(pos.x() - left) <= margin and abs(pos.y() - top) <= margin:
             return "top-left"
         if abs(pos.x() - right) <= margin and abs(pos.y() - top) <= margin:
@@ -135,37 +197,31 @@ class ResizableAnnotationRect(QGraphicsPixmapItem):
         return None
 
 ###############################################################################
-#                           ImageView                                        #
+#                                  IMAGEVIEW                                  #
 ###############################################################################
-
-from PyQt5.QtWidgets import QGraphicsRectItem
-
 class ImageView(QGraphicsView):
     """
-    Vista para mostrar la imagen, crear anotaciones y hacer zoom
-    alrededor del ratón.
+    A QGraphicsView that handles creating bounding boxes and zoom anchored
+    at the mouse cursor.
     """
     def __init__(self, scene, main_window, parent=None):
         super().__init__(scene, parent)
         self.main_window = main_window
-        self.image_file = None
-        self.startPos = None
-        self.currentRect = None
-
-        # Zoom alrededor del ratón
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setFocusPolicy(Qt.NoFocus)
 
+        self.startPos = None
+        self.currentRect = None
+
     def mousePressEvent(self, event):
         clicked_item = self.itemAt(event.pos())
-        if clicked_item is not None and isinstance(clicked_item, ResizableAnnotationRect):
+        if clicked_item and isinstance(clicked_item, ResizableAnnotationRect):
             super().mousePressEvent(event)
             return
 
         if event.button() == Qt.LeftButton:
             self.startPos = self.mapToScene(event.pos())
             rect = QRectF(self.startPos, self.startPos)
-
             color_for_rect = self.main_window.get_next_color()
             self.currentRect = ResizableAnnotationRect(rect, label="", color=color_for_rect)
             self.scene().addItem(self.currentRect)
@@ -173,24 +229,23 @@ class ImageView(QGraphicsView):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        if self.currentRect is not None and self.startPos is not None:
+        if self.currentRect and self.startPos:
             currentPos = self.mapToScene(event.pos())
             rect = QRectF(self.startPos, currentPos).normalized()
             self.currentRect.setRect(rect)
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton and self.currentRect is not None:
-            rect = self.currentRect.rect()
-            if rect.width() < 5 or rect.height() < 5:
+        if event.button() == Qt.LeftButton and self.currentRect:
+            r = self.currentRect.rect()
+            if r.width() < 5 or r.height() < 5:
                 self.scene().removeItem(self.currentRect)
             else:
-                # Si tenemos una etiqueta global, se asigna (pero no la sobreescribimos)
+                # If there's a "last_label", assign it automatically
                 if self.main_window.last_label:
                     self.currentRect.label = self.main_window.last_label
                     self.currentRect.textItem.setPlainText(self.main_window.last_label)
                     self.currentRect.updateLabelPosition()
-
             self.main_window.addAnnotation(self.currentRect)
             self.currentRect = None
             self.startPos = None
@@ -207,98 +262,113 @@ class ImageView(QGraphicsView):
             super().wheelEvent(event)
 
 ###############################################################################
-#                           ImageViewer (Ventana Principal)                   #
+#                                IMAGEVIEWER                                  #
 ###############################################################################
-
 class ImageViewer(QMainWindow):
     """
-    Ventana principal con:
-    - Navegación entre imágenes.
-    - Paleta de 10 colores para rectángulos.
-    - Etiqueta por fuera (arriba izq).
-    - Zoom en posición del ratón.
-    - La última etiqueta introducida por el usuario se conserva entre imágenes,
-      sin sobreescribirse por lo que exista en un TXT.
+    Main window that supports 6 languages:
+     - English (default)
+     - Spanish
+     - German
+     - French
+     - Portuguese
+     - Russian
+
+    If another language is requested, fallback to English.
     """
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Visor de Imágenes: Etiquetas persistentes, Zoom y colores")
-        self.setGeometry(100, 100, 1000, 600)
-
         self.image_list = []
         self.current_index = 0
         self.annotations = []
         self.currentTxtFile = None
 
-        # Paleta de 10 colores, se repite
         self.color_palette = [
-            QColor("#e6194b"),  # rojo
-            QColor("#3cb44b"),  # verde
-            QColor("#ffe119"),  # amarillo
-            QColor("#0082c8"),  # azul
-            QColor("#f58231"),  # naranja
-            QColor("#911eb4"),  # púrpura
-            QColor("#46f0f0"),  # cian
-            QColor("#f032e6"),  # magenta
-            QColor("#d2f53c"),  # lima
-            QColor("#fabebe"),  # rosa claro
+            QColor("#e6194b"),
+            QColor("#3cb44b"),
+            QColor("#ffe119"),
+            QColor("#0082c8"),
+            QColor("#f58231"),
+            QColor("#911eb4"),
+            QColor("#46f0f0"),
+            QColor("#f032e6"),
+            QColor("#d2f53c"),
+            QColor("#fabebe"),
         ]
         self.color_index = 0
 
-        # Esta variable se mantiene aunque cambies de imagen
-        # y no se sobreescribe al cargar un TXT.
         self.last_label = ""
-
-        # Dimensiones de la imagen actual
         self.image_width = 1
         self.image_height = 1
 
+        self.scene = QGraphicsScene()
         self.setFocusPolicy(Qt.StrongFocus)
 
-        # Layout principal
+        # Build the UI
         self.centralWidget = QWidget()
         self.setCentralWidget(self.centralWidget)
         self.mainLayout = QHBoxLayout(self.centralWidget)
 
-        # Panel izquierdo
+        # Left panel
         self.leftLayout = QVBoxLayout()
-        self.btnOpenImage = QPushButton("Abrir imagen(es)")
+        self.btnOpenImage = QPushButton()
         self.btnOpenImage.clicked.connect(self.openImages)
         self.leftLayout.addWidget(self.btnOpenImage)
 
-        self.scene = QGraphicsScene()
         self.imageView = ImageView(self.scene, self)
         self.leftLayout.addWidget(self.imageView)
         self.mainLayout.addLayout(self.leftLayout, 3)
 
-        # Panel derecho
+        # Right panel
         self.rightLayout = QVBoxLayout()
         self.listWidget = QListWidget()
         self.listWidget.setSelectionMode(QListWidget.ExtendedSelection)
         self.listWidget.itemDoubleClicked.connect(self.editAnnotationLabel)
         self.rightLayout.addWidget(self.listWidget)
 
-        self.btnAssignLabel = QPushButton("Asignar etiqueta a seleccionados")
+        self.btnAssignLabel = QPushButton()
         self.btnAssignLabel.clicked.connect(self.assignLabelToSelected)
         self.rightLayout.addWidget(self.btnAssignLabel)
 
-        self.btnDeleteAnnotation = QPushButton("Eliminar anotación")
+        self.btnDeleteAnnotation = QPushButton()
         self.btnDeleteAnnotation.clicked.connect(self.deleteAnnotation)
         self.rightLayout.addWidget(self.btnDeleteAnnotation)
 
         self.mainLayout.addLayout(self.rightLayout, 1)
 
-    def get_next_color(self) -> QColor:
+        # Default language is English, fallback if unknown
+        self.current_language = "en"
+        self.set_language("en")
+
+        self.setGeometry(100, 100, 1200, 600)
+        self.show()
+
+    def set_language(self, lang_code):
         """
-        Devuelve el siguiente color de la paleta y avanza el índice cíclicamente.
+        Set UI text for 'lang_code' among: en, es, de, fr, pt, ru.
+        If 'lang_code' is not recognized, fallback to 'en'.
         """
-        color = self.color_palette[self.color_index]
+        if lang_code not in STRINGS:
+            lang_code = "en"
+        self.current_language = lang_code
+
+        # Update window title
+        self.setWindowTitle(STRINGS[lang_code]["window_title"])
+
+        # Update button texts
+        self.btnOpenImage.setText(STRINGS[lang_code]["open_images"])
+        self.btnAssignLabel.setText(STRINGS[lang_code]["assign_label"])
+        self.btnDeleteAnnotation.setText(STRINGS[lang_code]["delete_annotation"])
+
+    def get_next_color(self):
+        c = self.color_palette[self.color_index]
         self.color_index = (self.color_index + 1) % len(self.color_palette)
-        return color
+        return c
 
     def openImages(self):
+        open_title = STRINGS[self.current_language]["open_images"]
         files, _ = QFileDialog.getOpenFileNames(
-            self, "Abrir imagen(es)", "", "Imágenes (*.png *.jpg *.jpeg *.bmp)"
+            self, open_title, "", "Images (*.png *.jpg *.jpeg *.bmp)"
         )
         if files:
             self.image_list = files
@@ -306,19 +376,22 @@ class ImageViewer(QMainWindow):
             self.loadCurrentImage()
 
     def loadCurrentImage(self):
+        if not self.image_list or self.current_index >= len(self.image_list):
+            return
         filename = self.image_list[self.current_index]
         pixmap = QPixmap(filename)
         if pixmap.isNull():
             return
+
         self.image_width = pixmap.width()
         self.image_height = pixmap.height()
-
         self.scene.clear()
+
         item = QGraphicsPixmapItem(pixmap)
         item.setZValue(0)
         self.scene.addItem(item)
-
         self.imageView.fitInView(item, Qt.KeepAspectRatio)
+
         self.annotations = []
         self.listWidget.clear()
 
@@ -326,12 +399,14 @@ class ImageViewer(QMainWindow):
         self.currentTxtFile = base + ".txt"
         self.loadAnnotations(self.currentTxtFile)
 
-        self.setWindowTitle(
-            f"Imagen {self.current_index + 1} de {len(self.image_list)} - {os.path.basename(filename)}"
+        nav_title = STRINGS[self.current_language]["nav_title"].format(
+            current=self.current_index + 1,
+            total=len(self.image_list),
+            filename=os.path.basename(filename)
         )
+        self.setWindowTitle(nav_title)
 
     def keyPressEvent(self, event):
-        # Navegación entre imágenes
         if event.key() in (Qt.Key_Right, Qt.Key_Space):
             if self.current_index < len(self.image_list) - 1:
                 self.current_index += 1
@@ -346,34 +421,25 @@ class ImageViewer(QMainWindow):
             super().keyPressEvent(event)
 
     def addAnnotation(self, annotation: ResizableAnnotationRect):
-        """
-        Se llama al terminar de crear un rectángulo.
-        Lo añadimos a la lista interna y lo reflejamos en la listWidget.
-        """
         if annotation not in self.annotations:
             self.annotations.append(annotation)
 
         r = annotation.rect()
-        center_x = r.x() + r.width() / 2
-        center_y = r.y() + r.height() / 2
-        text = (f"Rect: (Centro: {center_x:.3f}, {center_y:.3f}, "
-                f"Ancho: {r.width():.3f}, Alto: {r.height():.3f}) - "
-                f"Etiqueta: {annotation.label if annotation.label else 'Sin nombre'}")
+        cx = r.x() + r.width()/2
+        cy = r.y() + r.height()/2
+        label_to_show = annotation.label if annotation.label else STRINGS[self.current_language]["rect_no_label"]
+        text = f"(Center: {cx:.2f},{cy:.2f} W:{r.width():.2f} H:{r.height():.2f}) - {label_to_show}"
 
         item = QListWidgetItem(text)
         item.setData(Qt.UserRole, annotation)
-        # Mismo color de fondo en la lista
         item.setBackground(QBrush(annotation.color))
         item.setForeground(QBrush(Qt.black))
-
         self.listWidget.addItem(item)
+
         self.updateAnnotationsFile()
 
-        # OJO: No modificamos self.last_label aquí si el rect no tiene label
-        # para no romper la persistencia de la última etiqueta que el usuario introdujo.
-
+        # If annotation has a label, store as last_label
         if annotation.label:
-            # Si el rectángulo sí tiene label, esa es la nueva last_label
             self.last_label = annotation.label
 
     def updateAnnotationsFile(self):
@@ -384,135 +450,112 @@ class ImageViewer(QMainWindow):
                 r = ann.rect()
                 center_x = (r.x() + r.width()/2) / self.image_width
                 center_y = (r.y() + r.height()/2) / self.image_height
-                norm_width = r.width() / self.image_width
-                norm_height = r.height() / self.image_height
-                line = f"{ann.label} {center_x} {center_y} {norm_width} {norm_height}\n"
-                f.write(line)
+                nw = r.width() / self.image_width
+                nh = r.height() / self.image_height
+                f.write(f"{ann.label} {center_x} {center_y} {nw} {nh}\n")
 
     def loadAnnotations(self, txt_file):
-        """
-        Carga anotaciones del TXT, crea los rects con su color, 
-        pero NO sobreescribe self.last_label con la del archivo.
-        """
         if os.path.exists(txt_file):
             with open(txt_file, "r") as f:
                 for line in f:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    parts = line.split()
+                    parts = line.strip().split()
                     if len(parts) >= 5:
-                        try:
-                            label = parts[0]
-                            norm_center_x = float(parts[1])
-                            norm_center_y = float(parts[2])
-                            norm_width = float(parts[3])
-                            norm_height = float(parts[4])
+                        label = parts[0]
+                        x_c = float(parts[1])
+                        y_c = float(parts[2])
+                        w_n = float(parts[3])
+                        h_n = float(parts[4])
+                        cx = x_c * self.image_width
+                        cy = y_c * self.image_height
+                        w = w_n * self.image_width
+                        h = h_n * self.image_height
+                        x = cx - w/2
+                        y = cy - h/2
 
-                            center_x = norm_center_x * self.image_width
-                            center_y = norm_center_y * self.image_height
-                            width = norm_width * self.image_width
-                            height = norm_height * self.image_height
+                        color_for_rect = self.get_next_color()
+                        ann = ResizableAnnotationRect(QRectF(x,y,w,h), label=label, color=color_for_rect)
+                        self.scene.addItem(ann)
+                        self.annotations.append(ann)
 
-                            x = center_x - width / 2
-                            y = center_y - height / 2
-                            rect = QRectF(x, y, width, height)
+                        label_shown = label if label else STRINGS[self.current_language]["rect_no_label"]
+                        item_txt = f"(Center: {cx:.2f},{cy:.2f} W:{w:.2f} H:{h:.2f}) - {label_shown}"
+                        item = QListWidgetItem(item_txt)
+                        item.setData(Qt.UserRole, ann)
+                        item.setBackground(QBrush(color_for_rect))
+                        item.setForeground(QBrush(Qt.black))
+                        self.listWidget.addItem(item)
 
-                            color_for_rect = self.get_next_color()
-                            annotation = ResizableAnnotationRect(
-                                rect, label=label, color=color_for_rect
-                            )
-                            self.scene.addItem(annotation)
-                            self.annotations.append(annotation)
-
-                            annotation.textItem.setPlainText(label)
-                            annotation.updateLabelPosition()
-
-                            text = (f"Rect: (Centro: {center_x:.3f}, {center_y:.3f}, "
-                                    f"Ancho: {width:.3f}, Alto: {height:.3f}) - "
-                                    f"Etiqueta: {label if label else 'Sin nombre'}")
-
-                            item = QListWidgetItem(text)
-                            item.setData(Qt.UserRole, annotation)
-                            item.setBackground(QBrush(annotation.color))
-                            item.setForeground(QBrush(Qt.black))
-
-                            self.listWidget.addItem(item)
-                            # No hacemos: if label: self.last_label = label
-                            # para NO sobreescribir la última etiqueta global.
-                        except Exception as e:
-                            print("Error al parsear la anotación:", e)
-        else:
-            with open(txt_file, "w") as f:
-                pass
-
-    def editAnnotationLabel(self, item: QListWidgetItem):
-        """
-        Edita la etiqueta de un rect existing, con un diálogo.
-        """
-        annotation = item.data(Qt.UserRole)
-        current_label = annotation.label
-        new_label, ok = QInputDialog.getText(self, "Editar Etiqueta", "Ingrese nuevo nombre:", text=current_label)
+    def editAnnotationLabel(self, item):
+        ann = item.data(Qt.UserRole)
+        current_label = ann.label
+        new_label, ok = QInputDialog.getText(
+            self,
+            STRINGS[self.current_language]["dialog_edit_label"],
+            STRINGS[self.current_language]["dialog_new_label"],
+            text=current_label
+        )
         if ok:
-            annotation.label = new_label
-            annotation.textItem.setPlainText(new_label)
-            annotation.updateLabelPosition()
+            ann.label = new_label
+            ann.textItem.setPlainText(new_label)
+            ann.updateLabelPosition()
 
-            r = annotation.rect()
-            center_x = r.x() + r.width() / 2
-            center_y = r.y() + r.height() / 2
-            text = (f"Rect: (Centro: {center_x:.3f}, {center_y:.3f}, "
-                    f"Ancho: {r.width():.3f}, Alto: {r.height():.3f}) - "
-                    f"Etiqueta: {new_label if new_label else 'Sin nombre'}")
+            r = ann.rect()
+            label_display = new_label if new_label else STRINGS[self.current_language]["rect_no_label"]
+            text = f"(Center: {r.x()+r.width()/2:.2f},{r.y()+r.height()/2:.2f} W:{r.width():.2f} H:{r.height():.2f}) - {label_display}"
             item.setText(text)
 
             self.updateAnnotationsFile()
-            # Actualizamos last_label a la que acaba de poner el usuario.
             if new_label:
                 self.last_label = new_label
 
     def assignLabelToSelected(self):
-        """
-        Asigna una etiqueta a todos los ítems seleccionados en la lista,
-        y actualiza last_label para las próximas anotaciones.
-        """
         selected_items = self.listWidget.selectedItems()
         if not selected_items:
             return
-        new_label, ok = QInputDialog.getText(self, "Asignar Etiqueta", "Ingrese la etiqueta para los seleccionados:")
+        new_label, ok = QInputDialog.getText(
+            self,
+            STRINGS[self.current_language]["dialog_edit_label"],
+            STRINGS[self.current_language]["dialog_new_label"]
+        )
         if ok:
-            for item in selected_items:
-                annotation = item.data(Qt.UserRole)
-                annotation.label = new_label
-                annotation.textItem.setPlainText(new_label)
-                annotation.updateLabelPosition()
+            for it in selected_items:
+                ann = it.data(Qt.UserRole)
+                ann.label = new_label
+                ann.textItem.setPlainText(new_label)
+                ann.updateLabelPosition()
 
-                r = annotation.rect()
-                center_x = r.x() + r.width()/2
-                center_y = r.y() + r.height()/2
-                text = (f"Rect: (Centro: {center_x:.3f}, {center_y:.3f}, "
-                        f"Ancho: {r.width():.3f}, Alto: {r.height():.3f}) - "
-                        f"Etiqueta: {new_label if new_label else 'Sin nombre'}")
-                item.setText(text)
+                r = ann.rect()
+                display = new_label if new_label else STRINGS[self.current_language]["rect_no_label"]
+                txt = f"(Center: {r.x()+r.width()/2:.2f},{r.y()+r.height()/2:.2f} W:{r.width():.2f} H:{r.height():.2f}) - {display}"
+                it.setText(txt)
             self.updateAnnotationsFile()
-            self.last_label = new_label  # persistimos la nueva etiqueta
+            self.last_label = new_label
 
     def deleteAnnotation(self):
         selected_items = self.listWidget.selectedItems()
         if not selected_items:
             return
-        for item in selected_items:
-            annotation = item.data(Qt.UserRole)
-            self.scene.removeItem(annotation)
-            if annotation in self.annotations:
-                self.annotations.remove(annotation)
-            self.listWidget.takeItem(self.listWidget.row(item))
+        for it in selected_items:
+            ann = it.data(Qt.UserRole)
+            self.scene.removeItem(ann)
+            if ann in self.annotations:
+                self.annotations.remove(ann)
+            self.listWidget.takeItem(self.listWidget.row(it))
         self.updateAnnotationsFile()
 
-
+###############################################################################
+#                                   MAIN                                      #
+###############################################################################
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+
     viewer = ImageViewer()
+    # Switch language to e.g. "es", "de", "fr", "pt", "ru" or fallback to "en" if unknown
+    # viewer.set_language("es")
+    # viewer.set_language("de")
+    # viewer.set_language("fr")
+    # viewer.set_language("pt")
+    # viewer.set_language("ru")
+
     viewer.show()
     sys.exit(app.exec_())
-
