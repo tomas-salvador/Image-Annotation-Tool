@@ -57,7 +57,7 @@ A set of **10 predefined colors** is used for bounding boxes. Once the 10th colo
 1. **Clone the repository**:
    ```bash
    git clone https://github.com/tomas-salvador/Image-Annotation-Tool
-   cd <Image-Annotation-Tool>
+   cd Image-Annotation-Tool
 Install dependencies:
 ```bash
 pip install pyqt5
