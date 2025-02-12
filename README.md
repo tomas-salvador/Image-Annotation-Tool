@@ -87,13 +87,11 @@ python main.py
 - Press **Space** or **Right Arrow** to go to the next image, **Left Arrow** to go back.
 - Zoom with **Ctrl** or **Shift** + scroll wheel.
 
----
+**Important**: The image (for example, `image.png`) and its corresponding TXT file `image.txt` must reside in the **same folder** with the **same base name** so the tool can load/save annotations automatically.
 
 ## Contributing
 
 Feel free to open Issues or submit Pull Requests if you want to improve or extend the functionality.
-
----
 
 ## License
 
