@@ -1,0 +1,9 @@
+conda create -n tf python=3.10 -y
+conda activate tf
+pip install pyqt5 ultralytics pyyaml
+python main.py
+
+
+
+
+pyinstaller --onefile --windowed --add-data "Classes;Classes" main.py
