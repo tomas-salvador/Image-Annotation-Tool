@@ -2,7 +2,6 @@ import sys
 import os
 import yaml
 import ctypes
-from ultralytics import YOLO
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QGraphicsScene, QFileDialog, QGraphicsPixmapItem,
@@ -242,6 +241,7 @@ class ImageViewer(QMainWindow):
         self.last_label = 0
         self.image_width = 1
         self.image_height = 1
+        self.detection_model = None
         
         # 2. Configuración de la ventana principal
         self.setFocusPolicy(Qt.StrongFocus)
@@ -1042,6 +1042,8 @@ class ImageViewer(QMainWindow):
         
         if file_path:
             try:
+                # Carga diferida para no forzar torch/ultralytics en el arranque.
+                from ultralytics import YOLO
                 self.detection_model = YOLO(file_path)
                 QMessageBox.information(self, "Modelo cargado", f"Modelo YOLO cargado:\n{file_path}")
                 self.btnUseModel.setVisible(True)  # Mostrar el botón
