@@ -1,6 +1,7 @@
 import sys
 import os
 import yaml
+import ctypes
 from ultralytics import YOLO
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -22,6 +23,104 @@ from Classes.view_editor_dialog import ViewEditorDialog
 import matplotlib.pyplot as plt
 
 ###############################################################################
+#                              Stylesheets                                    #
+###############################################################################
+DARK_STYLESHEET = """
+QMainWindow, QDialog {
+    background-color: #2b2b2b;
+    color: #e0e0e0;
+}
+QWidget {
+    background-color: #2b2b2b;
+    color: #e0e0e0;
+}
+QMenuBar {
+    background-color: #323232;
+    color: #e0e0e0;
+    border-bottom: 1px solid #444;
+}
+QMenuBar::item:selected {
+    background-color: #444;
+}
+QMenu {
+    background-color: #323232;
+    color: #e0e0e0;
+    border: 1px solid #444;
+}
+QMenu::item:selected {
+    background-color: #444;
+}
+QPushButton {
+    background-color: #404040;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 6px 12px;
+}
+QPushButton:hover {
+    background-color: #505050;
+    border: 1px solid #666;
+}
+QPushButton:pressed {
+    background-color: #303030;
+}
+QListWidget, QScrollArea, QTextBrowser {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+    border: 1px solid #444;
+    border-radius: 4px;
+}
+QListWidget::item:selected {
+    background-color: #3d59a1;
+}
+QLineEdit {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 4px;
+}
+QLabel {
+    color: #e0e0e0;
+}
+QCheckBox {
+    color: #e0e0e0;
+}
+QComboBox {
+    background-color: #404040;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 4px;
+}
+QComboBox QAbstractItemView {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+    selection-background-color: #3d59a1;
+}
+QGraphicsView {
+    background-color: #1e1e1e;
+}
+"""
+
+LIGHT_STYLESHEET = ""
+
+def set_window_title_bar_theme(window, dark):
+    """Aplica el modo oscuro/claro a la barra de título de Windows."""
+    if sys.platform != "win32":
+        return
+    try:
+        hwnd = int(window.winId())
+        value = ctypes.c_int(1 if dark else 0)
+        # Atributo 20: DWMWA_USE_IMMERSIVE_DARK_MODE (Windows 11 y Win10 20H1+)
+        # Atributo 19: Versiones anteriores de Windows 10
+        res = ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 20, ctypes.byref(value), ctypes.sizeof(value))
+        if res != 0:
+            ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 19, ctypes.byref(value), ctypes.sizeof(value))
+    except Exception:
+        pass
+
+###############################################################################
 #                              ImageViewer Class                              #
 ###############################################################################
 class ImageViewer(QMainWindow):
@@ -34,6 +133,9 @@ class ImageViewer(QMainWindow):
         self.redo_stack = []  # Para rehacer acciones
         self.max_undo_steps = 5
         
+        # Tema
+        self.dark_mode_enabled = False
+
         # Crear la barra de menú principal
         self.menuBar = self.menuBar()
 
@@ -83,6 +185,12 @@ class ImageViewer(QMainWindow):
         self.editViewAction = QAction("&Edit View", self)
         self.editViewAction.triggered.connect(self.edit_view)
         self.viewMenu.addAction(self.editViewAction)
+
+        # Acción: Cambiar Tema
+        self.toggleThemeAction = QAction("Dark Mode", self)
+        self.toggleThemeAction.triggered.connect(self.toggle_theme)
+        self.viewMenu.addAction(self.toggleThemeAction)
+
         # Visibilidad de nombres por tipo
         self.name_visibility = {'box': True, 'line': True, 'polyline': True}
 
@@ -282,6 +390,7 @@ class ImageViewer(QMainWindow):
         dialog_height = int(screen_height * 0.7)
 
         dialog = QDialog(self)
+        set_window_title_bar_theme(dialog, self.dark_mode_enabled)
         dialog.setWindowTitle(STRINGS[self.current_lang].get("manual_title", "User Manual"))
         dialog.resize(dialog_width, dialog_height)
 
@@ -314,6 +423,7 @@ class ImageViewer(QMainWindow):
         """
         
         msg = QMessageBox()
+        set_window_title_bar_theme(msg, self.dark_mode_enabled)
         msg.setIcon(QMessageBox.Information)
         msg.setWindowTitle("About")
         msg.setTextFormat(Qt.RichText)
@@ -332,6 +442,7 @@ class ImageViewer(QMainWindow):
             class_names=self.class_names,
             class_visibility=self.class_visibility,
         )
+        set_window_title_bar_theme(dlg, self.dark_mode_enabled)
         if dlg.exec_() == QDialog.Accepted:
             # 1) Nombres (Boxes / Lines / Polylines)
             self.name_visibility = dlg.get_states()
@@ -397,6 +508,28 @@ class ImageViewer(QMainWindow):
         self.last_label = class_id  # Usamos el ID para consistencia con el sistema de anotaciones
         print(f"Clase seleccionada: {class_name} (ID: {class_id})")
     
+    def toggle_theme(self):
+        """Alterna entre modo claro y oscuro."""
+        self.dark_mode_enabled = not self.dark_mode_enabled
+        self.apply_theme()
+        
+        # Actualizar texto de la acción en el menú
+        theme_key = "light_mode" if self.dark_mode_enabled else "dark_mode"
+        self.toggleThemeAction.setText(STRINGS[self.current_lang].get(theme_key, "Dark Mode"))
+        
+        # Actualizar información de imagen para el color del nombre del archivo
+        self.updateImageInfo()
+
+    def apply_theme(self):
+        """Aplica el stylesheet correspondiente al tema actual."""
+        if self.dark_mode_enabled:
+            QApplication.instance().setStyleSheet(DARK_STYLESHEET)
+        else:
+            QApplication.instance().setStyleSheet(LIGHT_STYLESHEET)
+        
+        # Aplicar a la barra de título (Windows)
+        set_window_title_bar_theme(self, self.dark_mode_enabled)
+
     def set_language(self, lang):
         # Sets the UI language; falls back to English if the language is not supported.
         if lang not in STRINGS:
@@ -427,6 +560,10 @@ class ImageViewer(QMainWindow):
 
         # Panel de navegación
         self.btnShowHistogram.setText(STRINGS[lang].get("show_histogram", "Histograma de etiquetas"))
+
+        # Cambiar texto del modo oscuro/claro
+        theme_key = "light_mode" if self.dark_mode_enabled else "dark_mode"
+        self.toggleThemeAction.setText(STRINGS[lang].get(theme_key, "Dark Mode"))
 
         self.updateImageInfo()  # Actualiza el texto con el nuevo idioma
 
@@ -509,6 +646,7 @@ class ImageViewer(QMainWindow):
         }
         
         dialog = ClassEditorDialog(class_data, self)
+        set_window_title_bar_theme(dialog, self.dark_mode_enabled)
 
         if dialog.exec_() == QDialog.Accepted:
             old_class_ids = sorted(self.class_names.keys(), key=int)
@@ -530,6 +668,7 @@ class ImageViewer(QMainWindow):
                     STRINGS[self.current_lang].get("cancel", "Cancel"),
                     0, 100, self
                 )
+                set_window_title_bar_theme(self.progress_dialog, self.dark_mode_enabled)
                 self.progress_dialog.setWindowTitle(STRINGS[self.current_lang].get("please_wait", "Please wait..."))
                 self.progress_dialog.setWindowFlags(self.progress_dialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
                 self.progress_dialog.setWindowModality(Qt.WindowModal)
@@ -663,6 +802,12 @@ class ImageViewer(QMainWindow):
             self.lblFileName.setText(wrapped)
         else:
             self.lblFileName.setText(filename)
+        
+        # Color según el tema
+        if self.dark_mode_enabled:
+            self.lblFileName.setStyleSheet("font-size: 11px; color: #aaa;")
+        else:
+            self.lblFileName.setStyleSheet("font-size: 11px; color: #555;")
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -698,6 +843,7 @@ class ImageViewer(QMainWindow):
     def open_filter_dialog(self):
         """Abre un diálogo para seleccionar clases y filtrar imágenes con mejor UI"""
         dialog = QDialog(self)
+        set_window_title_bar_theme(dialog, self.dark_mode_enabled)
         dialog.setWindowFlags(dialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         dialog.setWindowTitle(STRINGS[self.current_lang]["filter_title"])
         dialog.setMinimumWidth(400)  # Más ancho

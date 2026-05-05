@@ -69,6 +69,8 @@ STRINGS = {
         "menu_redo": "&Redo",
         "menu_view": "&View",
         "menu_edit_view": "Edit View",
+        "dark_mode": "Dark Mode",
+        "light_mode": "Light Mode",
         "edit_view_placeholder": "This feature is not yet implemented.",
 
         # Filtro
@@ -232,6 +234,8 @@ STRINGS = {
         "menu_redo": "&Rehacer",
         "menu_view": "&Vista",
         "menu_edit_view": "Editar Vista",
+        "dark_mode": "Modo Oscuro",
+        "light_mode": "Modo Claro",
         "edit_view_placeholder": "Esta función aún no está implementada.",
 
         # Filtro
