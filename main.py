@@ -1141,7 +1141,7 @@ class ImageViewer(QMainWindow):
         if not self.directory:
             return
         self.image_list = [os.path.join(self.directory, img)
-                        for img in os.listdir(self.directory)
+                        for img in sorted(os.listdir(self.directory))
                         if img.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp'))]
 
 
