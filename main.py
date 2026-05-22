@@ -174,6 +174,12 @@ class ImageViewer(QMainWindow):
         self.redoAction.triggered.connect(self.redo_last_action)
         self.editMenu.addAction(self.redoAction)
 
+        # Acción Copiar etiquetas de la imagen anterior
+        self.copyPrevLabelsAction = QAction("&Copy labels from previous image", self)
+        self.copyPrevLabelsAction.setShortcut("Shift+-")
+        self.copyPrevLabelsAction.triggered.connect(self.copy_annotations_from_previous)
+        self.editMenu.addAction(self.copyPrevLabelsAction)
+
         # Acción Copiar
         self.copied_annotation = None  # Para almacenar la anotación copiada
 
@@ -555,6 +561,10 @@ class ImageViewer(QMainWindow):
         self.languageMenu.setTitle(STRINGS[lang].get("menu_languages", "Languages"))
         self.editMenu.setTitle(STRINGS[lang].get("menu_edit", "&Edit"))
         self.undoAction.setText(STRINGS[lang].get("menu_undo", "&Undo"))
+        if hasattr(self, "redoAction"):
+            self.redoAction.setText(STRINGS[lang].get("menu_redo", "&Redo"))
+        if hasattr(self, "copyPrevLabelsAction"):
+            self.copyPrevLabelsAction.setText(STRINGS[lang].get("copy_prev_labels", "Copy labels from previous image"))
         self.viewMenu.setTitle(STRINGS[lang].get("menu_view", "&View"))
         self.editViewAction.setText(STRINGS[lang].get("menu_edit_view", "&Edit View"))
 
@@ -1360,6 +1370,11 @@ class ImageViewer(QMainWindow):
         # Borrar imagen con Ctrl+Ç
         elif event.key() == Qt.Key_P and event.modifiers() & Qt.ControlModifier and event.modifiers() & Qt.ShiftModifier:
             self.deleteCurrentImage()
+            return
+
+        # Copiar etiquetas de la imagen anterior con Shift + - (guion)
+        elif event.key() in (Qt.Key_Minus, Qt.Key_Underscore) and event.modifiers() & Qt.ShiftModifier:
+            self.copy_annotations_from_previous()
             return
 
         else:
