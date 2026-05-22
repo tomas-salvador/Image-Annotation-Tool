@@ -115,6 +115,7 @@ STRINGS = {
     <li><b>Redo:</b> Ctrl + Shift + Z</li>
     <li><b>Delete annotation:</b> Select it and press Delete</li>
     <li><b>Delete all annotations:</b> Shift + Delete or Shift + Backspace (no confirmation)</li>
+    <li><b>Copy labels from previous image:</b> Shift + -</li>
     <li><b>Copy annotation:</b> Ctrl + C</li>
     <li><b>Paste annotation:</b> Ctrl + V</li>
     <li><b>Assign label:</b> Select annotation(s) and click "Assign Label"</li>
@@ -284,6 +285,7 @@ STRINGS = {
     <li><b>Rehacer:</b> Ctrl + Shift + Z</li>
     <li><b>Eliminar anotación:</b> Selecciónala y presiona Supr</li>
     <li><b>Eliminar todas las anotaciones:</b> Shift + Supr o Shift + Retroceso (sin confirmación)</li>
+    <li><b>Copiar etiquetas de la anterior:</b> Shift + -</li>
     <li><b>Copiar anotación:</b> Ctrl + C</li>
     <li><b>Pegar anotación:</b> Ctrl + V</li>
     <li><b>Asignar etiqueta:</b> Selecciona anotaciones y haz clic en "Asignar etiqueta"</li>
@@ -451,6 +453,7 @@ STRINGS = {
         <li><b>Ripristina:</b> Ctrl + Shift + Z</li>
         <li><b>Elimina annotazione:</b> Selezionala e premi Canc</li>
         <li><b>Elimina tutte le annotazioni:</b> Shift + Canc o Shift + Backspace (senza conferma)</li>
+        <li><b>Copia etichette dall'immagine precedente:</b> Shift + -</li>
         <li><b>Copia annotazione:</b> Ctrl + C</li>
         <li><b>Incolla annotazione:</b> Ctrl + V</li>
         <li><b>Assegna etichetta:</b> Seleziona annotazioni e clicca "Assegna etichetta"</li>
