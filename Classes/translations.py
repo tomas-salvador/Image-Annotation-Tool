@@ -13,6 +13,9 @@ STRINGS = {
         "confirm_delete_msg": "Are you sure you want to delete this image and its annotations?",
         "assign_label": "Assign Label to Selected",
         "delete_annotation": "Delete Annotation",
+        "delete_all_annotations": "Delete All Annotations",
+        "confirm_delete_all_title": "Confirm Deletion",
+        "confirm_delete_all_msg": "Are you sure you want to delete all annotations for this image?",
         "rect_no_label": "No Label",
         "dialog_edit_label": "Edit Label",
         "edit_classes": "Edit Classes",
@@ -111,6 +114,7 @@ STRINGS = {
     <li><b>Undo:</b> Ctrl + Z</li>
     <li><b>Redo:</b> Ctrl + Shift + Z</li>
     <li><b>Delete annotation:</b> Select it and press Delete</li>
+    <li><b>Delete all annotations:</b> Shift + Delete or Shift + Backspace (no confirmation)</li>
     <li><b>Copy annotation:</b> Ctrl + C</li>
     <li><b>Paste annotation:</b> Ctrl + V</li>
     <li><b>Assign label:</b> Select annotation(s) and click "Assign Label"</li>
@@ -171,6 +175,9 @@ STRINGS = {
         "confirm_delete_msg": "¿Estás seguro de que quieres eliminar esta imagen y sus anotaciones?",
         "assign_label": "Asignar etiqueta a seleccionados",
         "delete_annotation": "Eliminar anotación",
+        "delete_all_annotations": "Eliminar todas las anotaciones",
+        "confirm_delete_all_title": "Confirmar eliminación",
+        "confirm_delete_all_msg": "¿Estás seguro de que deseas eliminar todas las anotaciones de esta imagen?",
         "rect_no_label": "Sin nombre",
         "edit_classes": "Editar Clases",
         "dialog_edit_label": "Editar Etiqueta",
@@ -276,6 +283,7 @@ STRINGS = {
     <li><b>Deshacer:</b> Ctrl + Z</li>
     <li><b>Rehacer:</b> Ctrl + Shift + Z</li>
     <li><b>Eliminar anotación:</b> Selecciónala y presiona Supr</li>
+    <li><b>Eliminar todas las anotaciones:</b> Shift + Supr o Shift + Retroceso (sin confirmación)</li>
     <li><b>Copiar anotación:</b> Ctrl + C</li>
     <li><b>Pegar anotación:</b> Ctrl + V</li>
     <li><b>Asignar etiqueta:</b> Selecciona anotaciones y haz clic en "Asignar etiqueta"</li>
@@ -336,6 +344,9 @@ STRINGS = {
         "confirm_delete_msg": "Sei sicuro di voler eliminare questa immagine e le sue annotazioni?",
         "assign_label": "Assegna etichetta ai selezionati",
         "delete_annotation": "Elimina annotazione",
+        "delete_all_annotations": "Elimina tutte le annotazioni",
+        "confirm_delete_all_title": "Conferma eliminazione",
+        "confirm_delete_all_msg": "Sei sicuro di voler eliminare tutte le annotazioni per questa immagine?",
         "rect_no_label": "Senza etichetta",
         "edit_classes": "Modifica classi",
         "dialog_edit_label": "Modifica etichetta",
@@ -439,6 +450,7 @@ STRINGS = {
         <li><b>Annulla:</b> Ctrl + Z</li>
         <li><b>Ripristina:</b> Ctrl + Shift + Z</li>
         <li><b>Elimina annotazione:</b> Selezionala e premi Canc</li>
+        <li><b>Elimina tutte le annotazioni:</b> Shift + Canc o Shift + Backspace (senza conferma)</li>
         <li><b>Copia annotazione:</b> Ctrl + C</li>
         <li><b>Incolla annotazione:</b> Ctrl + V</li>
         <li><b>Assegna etichetta:</b> Seleziona annotazioni e clicca "Assegna etichetta"</li>

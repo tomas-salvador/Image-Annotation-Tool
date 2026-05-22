@@ -370,6 +370,10 @@ class ImageViewer(QMainWindow):
         self.btnDeleteAnnotation.clicked.connect(self.deleteAnnotation)
         self.rightLayout.addWidget(self.btnDeleteAnnotation)
         
+        self.btnDeleteAllAnnotations = QPushButton()
+        self.btnDeleteAllAnnotations.clicked.connect(self.deleteAllAnnotations)
+        self.rightLayout.addWidget(self.btnDeleteAllAnnotations)
+        
         # --------------------------------------------------
         # 8. Ensamblaje final
         # --------------------------------------------------
@@ -546,6 +550,7 @@ class ImageViewer(QMainWindow):
         self.btnEditClasses.setText(STRINGS[lang]["edit_classes"])
         self.btnAssignLabel.setText(STRINGS[lang]["assign_label"])
         self.btnDeleteAnnotation.setText(STRINGS[lang]["delete_annotation"])
+        self.btnDeleteAllAnnotations.setText(STRINGS[lang].get("delete_all_annotations", "Delete All Annotations"))
         self.btnDeleteImage.setText(STRINGS[lang].get("delete_image"))
         self.btnCopyPrevLabels.setText(STRINGS[lang]["copy_prev_labels"])
         # Barra de menu
@@ -1343,6 +1348,12 @@ class ImageViewer(QMainWindow):
             self.useModel()
             return
 
+        # Borrar todas las anotaciones sin confirmación con Shift+Delete o Shift+Backspace
+        elif (event.key() == Qt.Key_Delete and event.modifiers() & Qt.ShiftModifier) or \
+             (event.key() == Qt.Key_Backspace and event.modifiers() & Qt.ShiftModifier):
+            self.deleteAllAnnotations(confirm=False)
+            return
+
         # Borrar con Spr
         elif event.key() == Qt.Key_Delete:  # Detecta solo la tecla Suprimir
             self.deleteAnnotation()
@@ -1983,6 +1994,26 @@ class ImageViewer(QMainWindow):
             if annotation in self.annotations:
                 self.annotations.remove(annotation)
             self.listWidget.takeItem(self.listWidget.row(item))
+        self.updateAnnotationsFile()
+        self.AnnotationView.unselectAnnotation()
+
+    def deleteAllAnnotations(self, confirm=True):
+        if not self.annotations:
+            return
+        if confirm:
+            confirm_res = QMessageBox.question(
+                self,
+                STRINGS[self.current_lang].get("confirm_delete_all_title", "Confirm Deletion"),
+                STRINGS[self.current_lang].get("confirm_delete_all_msg", "Are you sure you want to delete all annotations for this image?"),
+                QMessageBox.Yes | QMessageBox.No
+            )
+            if confirm_res != QMessageBox.Yes:
+                return
+        self.save_current_state()
+        for annotation in list(self.annotations):
+            self.scene.removeItem(annotation)
+        self.annotations.clear()
+        self.listWidget.clear()
         self.updateAnnotationsFile()
         self.AnnotationView.unselectAnnotation()
 
