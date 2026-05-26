@@ -435,6 +435,46 @@ class AnnotationView(QGraphicsView):
                 event.accept()
                 return
 
+            # --- Caso especial: borrar vértice en polyline seleccionada ---
+            if (
+                not (event.modifiers() & Qt.ControlModifier)
+                and isinstance(self._selected_annotation, PolylineAnnotationItem)
+                and self._selected_annotation.scene() is not None
+            ):
+                points = self._selected_annotation.getPoints()
+                clicked_idx = None
+                tolerance = max(6, PolylineAnnotationItem.HANDLE_SIZE)
+
+                for i, p in enumerate(points):
+                    if QLineF(scene_pos, p).length() <= tolerance:
+                        clicked_idx = i
+                        break
+
+                if clicked_idx is not None:
+                    self.main_window.save_current_state()
+
+                    if len(points) <= 2:
+                        if self._selected_annotation in self.main_window.annotations:
+                            self.main_window.annotations.remove(self._selected_annotation)
+                        self.scene().removeItem(self._selected_annotation)
+                        self._selected_annotation = None
+                        self.main_window.update_annotation_list()
+                    else:
+                        new_points = points[:clicked_idx] + points[clicked_idx+1:]
+                        self._selected_annotation.setPoints(new_points)
+                        self._selected_annotation.normalizeOrder()
+                        self.main_window.update_annotation_list()
+
+                        # mantener sincronizada la selección en la lista
+                        for i in range(self.main_window.listWidget.count()):
+                            list_item = self.main_window.listWidget.item(i)
+                            if list_item.data(Qt.UserRole) == self._selected_annotation:
+                                self.main_window.listWidget.setCurrentItem(list_item)
+                                break
+
+                    event.accept()
+                    return
+
 
             # --- Selección normal (como ya lo tenías) ---
             self.main_window.listWidget.clearSelection()

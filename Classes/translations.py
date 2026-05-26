@@ -136,6 +136,7 @@ STRINGS = {
         <ul>
             <li>First left click: sets the starting point.</li>
             <li>Subsequent left clicks: add points to the polyline.</li>
+            <li>When a polyline is selected, right click on one of its points to delete only that point. If deleting it leaves fewer than 2 points, the full polyline is removed.</li>
             <li>Final click (right click): ends the polyline.</li>
         </ul>
     </li>
@@ -306,6 +307,7 @@ STRINGS = {
         <ul>
             <li>Primer clic izquierdo: marca el inicio.</li>
             <li>Clics izquierdos siguientes: añaden puntos a la polilínea.</li>
+            <li>Con la polilinea seleccionada, haz clic derecho sobre uno de sus puntos para borrar solo ese punto. Si al borrarlo quedan menos de 2 puntos, se elimina la polilinea completa.</li>
             <li>Último clic (clic derecho): finaliza la polilínea.</li>
         </ul>
     </li>
@@ -483,6 +485,7 @@ STRINGS = {
             <ul>
                 <li>Primo clic sinistro: punto iniziale.</li>
                 <li>Clic sinistro successivi: aggiungono punti.</li>
+                <li>Con la polilinea selezionata, fai clic destro su uno dei suoi punti per eliminare solo quel punto. Se dopo l'eliminazione restano meno di 2 punti, viene eliminata l'intera polilinea.</li>
                 <li>Clic destro finale: termina la polilinea.</li>
             </ul>
         </li>
