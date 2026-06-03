@@ -119,6 +119,7 @@ STRINGS = {
     <li><b>Copy annotation:</b> Ctrl + C</li>
     <li><b>Paste annotation:</b> Ctrl + V</li>
     <li><b>Assign label:</b> Select annotation(s) and click "Assign Label"</li>
+    <li><b>Select class by number:</b> Press 0-9 to select the corresponding class</li>
 </ul>
 
 <p><b>Navigation:</b></p>
@@ -136,7 +137,7 @@ STRINGS = {
         <ul>
             <li>First left click: sets the starting point.</li>
             <li>Subsequent left clicks: add points to the polyline.</li>
-            <li>When a polyline is selected, right click on one of its points to delete only that point. If deleting it leaves fewer than 2 points, the full polyline is removed.</li>
+            <li>When a polyline is selected, Ctrl + click on one of its points to delete only that point. If deleting it leaves fewer than 2 points, the full polyline is removed.</li>
             <li>Final click (right click): ends the polyline.</li>
         </ul>
     </li>
@@ -290,6 +291,7 @@ STRINGS = {
     <li><b>Copiar anotación:</b> Ctrl + C</li>
     <li><b>Pegar anotación:</b> Ctrl + V</li>
     <li><b>Asignar etiqueta:</b> Selecciona anotaciones y haz clic en "Asignar etiqueta"</li>
+    <li><b>Seleccionar clase por número:</b> Pulsa 0-9 para seleccionar la clase correspondiente</li>
 </ul>
 
 <p><b>Navegación:</b></p>
@@ -307,7 +309,7 @@ STRINGS = {
         <ul>
             <li>Primer clic izquierdo: marca el inicio.</li>
             <li>Clics izquierdos siguientes: añaden puntos a la polilínea.</li>
-            <li>Con la polilinea seleccionada, haz clic derecho sobre uno de sus puntos para borrar solo ese punto. Si al borrarlo quedan menos de 2 puntos, se elimina la polilinea completa.</li>
+            <li>Con la polilinea seleccionada, haz Ctrl + clic sobre uno de sus puntos para borrar solo ese punto. Si al borrarlo quedan menos de 2 puntos, se elimina la polilinea completa.</li>
             <li>Último clic (clic derecho): finaliza la polilínea.</li>
         </ul>
     </li>
@@ -459,6 +461,7 @@ STRINGS = {
         <li><b>Copia annotazione:</b> Ctrl + C</li>
         <li><b>Incolla annotazione:</b> Ctrl + V</li>
         <li><b>Assegna etichetta:</b> Seleziona annotazioni e clicca "Assegna etichetta"</li>
+        <li><b>Seleziona classe per numero:</b> Premi 0-9 per selezionare la classe corrispondente</li>
     </ul>
 
     <p><b>Navigazione:</b></p>
@@ -485,7 +488,7 @@ STRINGS = {
             <ul>
                 <li>Primo clic sinistro: punto iniziale.</li>
                 <li>Clic sinistro successivi: aggiungono punti.</li>
-                <li>Con la polilinea selezionata, fai clic destro su uno dei suoi punti per eliminare solo quel punto. Se dopo l'eliminazione restano meno di 2 punti, viene eliminata l'intera polilinea.</li>
+                <li>Con la polilinea selezionata, fai Ctrl + clic su uno dei suoi punti per eliminare solo quel punto. Se dopo l'eliminazione restano meno di 2 punti, viene eliminata l'intera polilinea.</li>
                 <li>Clic destro finale: termina la polilinea.</li>
             </ul>
         </li>

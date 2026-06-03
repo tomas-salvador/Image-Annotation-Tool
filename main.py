@@ -1388,6 +1388,20 @@ class ImageViewer(QMainWindow):
             self.copy_annotations_from_previous()
             return
 
+        # Cambiar de clase con los números 0-9
+        elif Qt.Key_0 <= event.key() <= Qt.Key_9:
+            number = event.key() - Qt.Key_0
+            class_id_str = str(number)
+            if class_id_str in self.class_names:
+                for i in range(self.classesListWidget.count()):
+                    item = self.classesListWidget.item(i)
+                    if item.data(Qt.UserRole) == class_id_str:
+                        self.classesListWidget.setCurrentItem(item)
+                        self.on_class_selected(item)
+                        break
+            event.accept()
+            return
+
         else:
             super().keyPressEvent(event)
 
