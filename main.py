@@ -1166,80 +1166,89 @@ class ImageViewer(QMainWindow):
         folder = QFileDialog.getExistingDirectory(self, open_title, "")
     
         if folder:
-            data_file = os.path.join(folder, "data.yaml")
-    
+            # Buscar data.yaml EXACTAMENTE al mismo nivel que la carpeta seleccionada
+            # Es decir, la carpeta seleccionada (ej. 'test') y 'data.yaml' son hermanos.
+            yaml_dir = os.path.dirname(folder)
+            data_file = os.path.join(yaml_dir, "data.yaml")
+
             if not os.path.exists(data_file):
-                print("Error: No se encontró 'data.yaml' en la carpeta seleccionada.")
+                print("Error: No se encontró 'data.yaml' al mismo nivel que la carpeta seleccionada.")
+                QMessageBox.warning(self, "Error", f"No se encontró 'data.yaml' en:\n{yaml_dir}")
                 return
 
             # Leer el archivo YAML
             with open(data_file, "r") as file:
                 data = yaml.safe_load(file)
-                print(data_file)
-            self.dataYamnlDirectory = data_file
-            # Verificar que 'train' está en el YAML
-            if "train" in data:
-                # Si la ruta en el YAML es relativa, la ajustamos correctamente
-                print(folder)
-                print( data["train"])
-                train_folder = os.path.normpath(os.path.join(folder, data["train"].replace("../", "")))
-                # Obtener la ruta de las labels (asumiendo que están en /dataset/labels)
-                labels_folder = os.path.normpath(os.path.join(
-                    os.path.dirname(train_folder),  # Sube un nivel desde train_folder (/dataset/images -> /dataset)
-                    "labels"  # Nombre de la carpeta de labels
-                ))
-                if not os.path.exists(train_folder):
-                    print(f"Error: La carpeta de entrenamiento {train_folder} no existe.")
-                    return
-                self.directory = train_folder
-                # Obtener el nombre de la carpeta
-                self.dataset_name = os.path.basename(folder)
-                self.setWindowTitle(self.dataset_name)
-                self.labels_directory = labels_folder
-
-
+                print("data.yaml cargado desde:", data_file)
                 
-                # Cargar información de clases desde data.yaml
-                self.class_info = {
-                    'names': data.get('names', []),
-                    'nc': data.get('nc', 0)
-                }
-                # Intentar cargar colores existentes
-                if not self.load_class_colors(folder):
-                    # Generar nuevos colores si no existen
-                    self.class_colors = {}
-                    self.class_names = {}
-                    self.class_types = {}
-                    
-                    for i in range(self.class_info['nc']):
-                        class_id = str(i)
-                        hue = (i * 360) / max(1, self.class_info['nc'])
-                        color = QColor()
-                        color.setHslF(hue/360, 1.0, 0.5)
-                        self.class_colors[class_id] = color
-                        self.class_names[class_id] = self.class_info['names'][i] if i < len(self.class_info['names']) else f"Clase {i}"
-                        self.class_types[class_id] = "box"     # <--- AÑADIR
-                        print(self.class_colors)
-                        print(self.class_names)
-                        print(self.class_types)
-                    
-                    # Guardar los nuevos colores
-                    self.save_class_colors(folder)
-
-                # ACTUALIZACIÓN: Cargar las clases en la lista izquierda
-                self.update_classes_list()
+            self.dataYamnlDirectory = data_file
             
-                # Obtener imágenes en la carpeta de entrenamiento
-                self.load_image_index()
-    
-                if not self.image_list:
-                    print("No se encontraron imágenes en la carpeta de entrenamiento.")
-                    return
-    
-                self.current_index = 0
-                self.loadCurrentImage()
+            # 2. Determinar la carpeta de imágenes y de labels
+            # Si la carpeta seleccionada contiene una subcarpeta 'images', la usamos
+            if os.path.isdir(os.path.join(folder, "images")):
+                self.directory = os.path.join(folder, "images")
+                labels_folder = os.path.join(folder, "labels")
             else:
-                print("Error: No se encontró la clave 'train' en data.yaml.")
+                self.directory = folder
+                # Lógica original: subir un nivel y buscar "labels"
+                labels_folder = os.path.normpath(os.path.join(
+                    os.path.dirname(self.directory),
+                    "labels"
+                ))
+                
+                # Lógica alternativa para formato YOLO estándar (dataset/images/test -> dataset/labels/test)
+                if "images" in folder.replace("\\", "/"):
+                    alt_labels_folder = folder.replace("images", "labels").replace("Images", "Labels")
+                    if os.path.exists(alt_labels_folder):
+                        labels_folder = alt_labels_folder
+
+            if not os.path.exists(labels_folder):
+                print(f"Aviso: La carpeta de etiquetas {labels_folder} no existe. Se creará automáticamente.")
+                os.makedirs(labels_folder, exist_ok=True)
+                
+            self.labels_directory = labels_folder
+            
+            # Obtener el nombre de la carpeta
+            self.dataset_name = os.path.basename(folder)
+            self.setWindowTitle(self.dataset_name)
+
+            # Cargar información de clases desde data.yaml
+            self.class_info = {
+                'names': data.get('names', []),
+                'nc': data.get('nc', 0)
+            }
+            # Intentar cargar colores existentes usando el directorio donde está el YAML
+            if not self.load_class_colors(yaml_dir):
+                # Generar nuevos colores si no existen
+                self.class_colors = {}
+                self.class_names = {}
+                self.class_types = {}
+                
+                for i in range(self.class_info['nc']):
+                    class_id = str(i)
+                    hue = (i * 360) / max(1, self.class_info['nc'])
+                    color = QColor()
+                    color.setHslF(hue/360, 1.0, 0.5)
+                    self.class_colors[class_id] = color
+                    self.class_names[class_id] = self.class_info['names'][i] if i < len(self.class_info['names']) else f"Clase {i}"
+                    self.class_types[class_id] = "box"
+                
+                # Guardar los nuevos colores en el directorio del YAML
+                self.save_class_colors(yaml_dir)
+
+            # ACTUALIZACIÓN: Cargar las clases en la lista izquierda
+            self.update_classes_list()
+        
+            # Obtener imágenes en la carpeta de entrenamiento
+            self.load_image_index()
+
+            if not self.image_list:
+                print("No se encontraron imágenes en la carpeta seleccionada.")
+                QMessageBox.warning(self, "Aviso", "No se encontraron imágenes en la carpeta seleccionada.")
+                return
+
+            self.current_index = 0
+            self.loadCurrentImage()
 
     def deleteCurrentImage(self):
         """Elimina la imagen actual y su archivo de anotaciones asociado"""
