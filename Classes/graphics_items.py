@@ -979,3 +979,41 @@ class AnnotationView(QGraphicsView):
             event.accept()
         else:
             super().wheelEvent(event)
+
+class ClassificationAnnotationItem(QGraphicsTextItem):
+    def __init__(self, label="", name="", color=QColor(255, 0, 0), parent=None):
+        super().__init__(name, parent)
+        self.label = label
+        self.name = name
+        self.color = color
+        self.is_selected = False
+        self.isAnnotationItem = True
+        self.handles = []
+        self.is_class_visible = True
+        self.textItem = self  # Para compatibilidad con otras funciones
+
+        self._setup_appearance()
+
+    def setClassVisible(self, visible: bool):
+        self.is_class_visible = visible
+        self.setVisible(visible)
+
+    def _setup_appearance(self):
+        self.setDefaultTextColor(self.color)
+        font = QFont()
+        font.setPointSize(12)
+        font.setBold(True)
+        self.setFont(font)
+
+    def setNameVisible(self, visible: bool):
+        pass
+
+    def setSelected(self, selected):
+        self.is_selected = selected
+        
+    def setSelectedNoAperance(self, selected):
+        self.is_selected = selected
+
+    def updateLabelPosition(self):
+        pass
+

@@ -15,7 +15,7 @@ from PyQt5.QtCore import Qt, QRectF, QLocale, QThread, pyqtSignal, QLineF, QPoin
 #Clases:
 from Classes.class_editor_dialog import ClassEditorDialog
 from Classes.translations import STRINGS, LANGUAGES
-from Classes.graphics_items import AnnotationGraphicsItem, AnnotationView, LineAnnotationItem, PolylineAnnotationItem
+from Classes.graphics_items import AnnotationGraphicsItem, AnnotationView, LineAnnotationItem, PolylineAnnotationItem, ClassificationAnnotationItem
 from Classes.view_editor_dialog import ViewEditorDialog
 
 # Histograma
@@ -134,6 +134,9 @@ class ImageViewer(QMainWindow):
         
         # Tema
         self.dark_mode_enabled = False
+        
+        # Modo directorio (para datasets de clasificación estructurados por carpetas)
+        self.is_dir_mode = False
 
         # Crear la barra de menú principal
         self.menuBar = self.menuBar()
@@ -312,6 +315,12 @@ class ImageViewer(QMainWindow):
         self.btnEditClasses = QPushButton()
         self.btnEditClasses.clicked.connect(self.edit_classes)
         self.leftPanelLayout.addWidget(self.btnEditClasses)
+        
+        # Botón New Class Folder (para modo directorio)
+        self.btnNewClassFolder = QPushButton()
+        self.btnNewClassFolder.clicked.connect(self.create_class_folder)
+        self.btnNewClassFolder.setVisible(False)
+        self.leftPanelLayout.addWidget(self.btnNewClassFolder)
         
         # --------------------------------------------------
         # 6. Panel central (Imagen y controles principales)
@@ -517,6 +526,45 @@ class ImageViewer(QMainWindow):
         class_name = item.text()
         self.last_label = class_id  # Usamos el ID para consistencia con el sistema de anotaciones
         print(f"Clase seleccionada: {class_name} (ID: {class_id})")
+        
+        ctype = self.class_types.get(class_id, "box")
+        if ctype == "classification":
+            # Eliminar anotaciones de clasificación previas para evitar solapamiento
+            to_remove = [a for a in self.annotations if isinstance(a, ClassificationAnnotationItem)]
+            for a in to_remove:
+                self.scene.removeItem(a)
+                self.annotations.remove(a)
+                # Remover de la lista derecha
+                for i in range(self.listWidget.count()):
+                    item_w = self.listWidget.item(i)
+                    if item_w and item_w.data(Qt.UserRole) == a:
+                        self.listWidget.takeItem(i)
+                        break
+
+            color = self.class_colors.get(class_id, QColor("#FFFFFF"))
+            ann = ClassificationAnnotationItem(
+                label=class_id,
+                name=self.class_names.get(class_id, class_name),
+                color=color
+            )
+            ann.setPos(10, 10)
+            
+            self.scene.addItem(ann)
+            self.addAnnotation(ann)
+            
+            if getattr(self, "is_dir_mode", False):
+                import shutil
+                old_path = self.image_list[self.current_index]
+                class_folder = os.path.join(self.directory, self.class_names[class_id])
+                new_path = os.path.join(class_folder, os.path.basename(old_path))
+                if old_path != new_path:
+                    try:
+                        shutil.move(old_path, new_path)
+                        self.image_list[self.current_index] = new_path
+                        self.updateImageInfo()
+                    except Exception as e:
+                        print("Error moving file:", e)
+
     
     def toggle_theme(self):
         """Alterna entre modo claro y oscuro."""
@@ -548,6 +596,7 @@ class ImageViewer(QMainWindow):
         self.setWindowTitle(STRINGS[lang]["window_title"])
         self.btnUseModel.setText(STRINGS[lang]["use_model_button"])
         self.btnEditClasses.setText(STRINGS[lang]["edit_classes"])
+        self.btnNewClassFolder.setText(STRINGS[lang].get("new_class_folder", "New Class Folder"))
         self.btnAssignLabel.setText(STRINGS[lang]["assign_label"])
         self.btnDeleteAnnotation.setText(STRINGS[lang]["delete_annotation"])
         self.btnDeleteAllAnnotations.setText(STRINGS[lang].get("delete_all_annotations", "Delete All Annotations"))
@@ -719,6 +768,42 @@ class ImageViewer(QMainWindow):
                     STRINGS[self.current_lang].get("remap_success_title", "Success"),
                     STRINGS[self.current_lang].get("remap_success_msg", "Classes were successfully saved.")
                 )
+
+    def create_class_folder(self):
+        """Crea una nueva carpeta de clase en modo directorio"""
+        if not self.is_dir_mode or not self.directory:
+            return
+            
+        class_name, ok = QInputDialog.getText(self, STRINGS[self.current_lang].get("new_class_folder", "New Class"), "Enter new class name:")
+        if ok and class_name:
+            folder_path = os.path.join(self.directory, class_name)
+            if not os.path.exists(folder_path):
+                os.makedirs(folder_path)
+                # Recargar carpetas como clases
+                self._load_directory_classes()
+            else:
+                QMessageBox.warning(self, "Warning", f"Class '{class_name}' already exists.")
+
+    def _load_directory_classes(self):
+        """Lee los subdirectorios y los carga como clases"""
+        subdirs = [d for d in os.listdir(self.directory) if os.path.isdir(os.path.join(self.directory, d)) and d != "labels"]
+        subdirs.sort()
+        
+        self.class_names = {}
+        self.class_colors = {}
+        self.class_types = {}
+        
+        for i, class_name in enumerate(subdirs):
+            class_id = str(i)
+            self.class_names[class_id] = class_name
+            self.class_types[class_id] = "classification"
+            # Asignar color aleatorio
+            hue = (i * 360) / max(1, len(subdirs))
+            color = QColor()
+            color.setHslF(hue/360, 1.0, 0.5)
+            self.class_colors[class_id] = color
+            
+        self.update_classes_list()
 
     def _remap_all_annotations(self, deleted_ids, id_mapping):
         """Actualiza todos los archivos .txt eliminando clases y reordenando IDs."""
@@ -1155,9 +1240,20 @@ class ImageViewer(QMainWindow):
         """Recarga el índice de imágenes desde el disco"""
         if not self.directory:
             return
-        self.image_list = [os.path.join(self.directory, img)
-                        for img in sorted(os.listdir(self.directory))
-                        if img.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp'))]
+        if self.is_dir_mode:
+            self.image_list = []
+            for root, dirs, files in os.walk(self.directory):
+                if "labels" in dirs:
+                    dirs.remove("labels")
+                for img in files:
+                    if img.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
+                        self.image_list.append(os.path.join(root, img))
+            # Sort ignoring path by basename as requested
+            self.image_list.sort(key=lambda x: os.path.basename(x).lower())
+        else:
+            self.image_list = [os.path.join(self.directory, img)
+                            for img in sorted(os.listdir(self.directory))
+                            if img.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp'))]
 
 
 
@@ -1172,9 +1268,27 @@ class ImageViewer(QMainWindow):
             data_file = os.path.join(yaml_dir, "data.yaml")
 
             if not os.path.exists(data_file):
-                print("Error: No se encontró 'data.yaml' al mismo nivel que la carpeta seleccionada.")
-                QMessageBox.warning(self, "Error", f"No se encontró 'data.yaml' en:\n{yaml_dir}")
-                return
+                # Verificar si es modo directorio
+                subdirs = [d for d in os.listdir(folder) if os.path.isdir(os.path.join(folder, d)) and d != "labels"]
+                if subdirs:
+                    self.is_dir_mode = True
+                    self.directory = folder
+                    self.dataset_name = os.path.basename(folder)
+                    self.setWindowTitle(self.dataset_name)
+                    self.labels_directory = folder
+                    self._load_directory_classes()
+                    self.btnNewClassFolder.setVisible(True)
+                    self.load_image_index()
+                    if not self.image_list:
+                        QMessageBox.warning(self, "Aviso", "No se encontraron imágenes en las subcarpetas.")
+                        return
+                    self.current_index = 0
+                    self.loadCurrentImage()
+                    return
+                else:
+                    print("Error: No se encontró 'data.yaml' al mismo nivel que la carpeta seleccionada.")
+                    QMessageBox.warning(self, "Error", f"No se encontró 'data.yaml' en:\n{yaml_dir}")
+                    return
 
             # Leer el archivo YAML
             with open(data_file, "r") as file:
@@ -1325,7 +1439,28 @@ class ImageViewer(QMainWindow):
         self.listWidget.clear()
         base = os.path.splitext(os.path.basename(filename))[0]
         self.currentTxtFile = os.path.join(self.labels_directory, f"{base}.txt")
-        self.loadAnnotations(self.currentTxtFile)
+        if getattr(self, "is_dir_mode", False):
+            class_folder_name = os.path.basename(os.path.dirname(filename))
+            class_id = self.get_class_id_by_name(class_folder_name)
+            if class_id is not None:
+                color = self.class_colors.get(class_id, QColor("#FFFFFF"))
+                ann = ClassificationAnnotationItem(
+                    label=class_id,
+                    name=class_folder_name,
+                    color=color
+                )
+                ann.setPos(10, 10)
+                self.scene.addItem(ann)
+                self.annotations.append(ann)
+                self.apply_name_visibility_to_item(ann)
+                item_text = f"{class_folder_name} (Clasificación)"
+                item = QListWidgetItem(item_text)
+                item.setData(Qt.UserRole, ann)
+                item.setBackground(QBrush(color))
+                item.setForeground(QBrush(Qt.black))
+                self.listWidget.addItem(item)
+        else:
+            self.loadAnnotations(self.currentTxtFile)
         self.apply_name_visibility_to_all()
         self.updateImageInfo()  # Panel de navegacion
 
@@ -1447,6 +1582,9 @@ class ImageViewer(QMainWindow):
                 points = ann.getPoints()
                 coords = [(p.x(), p.y()) for p in points]
                 ann_type = "polyline"
+            elif isinstance(ann, ClassificationAnnotationItem):
+                coords = []
+                ann_type = "classification"
             else:
                 continue
 
@@ -1517,6 +1655,15 @@ class ImageViewer(QMainWindow):
         
         # Recargamos la imagen base
         if state['image_path']:
+            current_path = self.image_list[self.current_index]
+            if current_path != state['image_path'] and os.path.exists(current_path):
+                import shutil
+                try:
+                    shutil.move(current_path, state['image_path'])
+                    self.image_list[self.current_index] = state['image_path']
+                except Exception as e:
+                    print("Error undoing move:", e)
+                    
             pixmap = QPixmap(state['image_path'])
             if not pixmap.isNull():
                 item = QGraphicsPixmapItem(pixmap)
@@ -1644,6 +1791,15 @@ class ImageViewer(QMainWindow):
         
         # Recargamos la imagen base
         if state['image_path']:
+            current_path = self.image_list[self.current_index]
+            if current_path != state['image_path'] and os.path.exists(current_path):
+                import shutil
+                try:
+                    shutil.move(current_path, state['image_path'])
+                    self.image_list[self.current_index] = state['image_path']
+                except Exception as e:
+                    print("Error redoing move:", e)
+
             pixmap = QPixmap(state['image_path'])
             if not pixmap.isNull():
                 item = QGraphicsPixmapItem(pixmap)
@@ -1747,6 +1903,9 @@ class ImageViewer(QMainWindow):
             pts = annotation.getPoints()
             text = f"{label_show} ({len(pts)} pts)"
 
+        elif isinstance(annotation, ClassificationAnnotationItem):
+            text = f"{label_show} (Clasificación)"
+
         else:
             text = f"{label_show} (?)"
 
@@ -1793,6 +1952,9 @@ class ImageViewer(QMainWindow):
                 pts = ann.getPoints()
                 text = f"{label} ({len(pts)} pts)"
 
+            elif isinstance(ann, ClassificationAnnotationItem):
+                text = f"{label} (Clasificación)"
+
             else:
                 text = f"{label} (?)"
 
@@ -1806,6 +1968,8 @@ class ImageViewer(QMainWindow):
 
         
     def updateAnnotationsFile(self):
+        if getattr(self, "is_dir_mode", False):
+            return
         # Writes all annotations to a TXT file using normalized coordinates.
         if self.currentTxtFile:
             with open(self.currentTxtFile, "w") as f:
@@ -1835,6 +1999,9 @@ class ImageViewer(QMainWindow):
                         coords = " ".join(f"{p.x()/self.image_width:.6f} {p.y()/self.image_height:.6f}" for p in pts)
                         line = f"{class_id} {coords}\n"
 
+                    elif isinstance(ann, ClassificationAnnotationItem):
+                        line = f"{class_id}\n"
+
                     else:
                         continue  # ignorar si no tiene ni rect ni line
 
@@ -1849,8 +2016,8 @@ class ImageViewer(QMainWindow):
         with open(txt_file, "r") as f:
             for line in f:
                 parts = line.strip().split()
-                if len(parts) < 5:
-                    continue  # línea malformada
+                if not parts:
+                    continue
 
                 class_id = parts[0]
                 color = self.class_colors.get(class_id, QColor("#FF0000"))
@@ -1908,6 +2075,19 @@ class ImageViewer(QMainWindow):
                         color=color
                     )
                     self.apply_name_visibility_to_item(ann)
+
+                elif class_type == "classification":
+                    ann = ClassificationAnnotationItem(
+                        label=class_id,
+                        name=self.class_names.get(class_id, f"Class {class_id}"),
+                        color=color
+                    )
+                    y_offset = 10
+                    for a in self.annotations:
+                        if isinstance(a, ClassificationAnnotationItem):
+                            y_offset += 20
+                    ann.setPos(10, y_offset)
+                    self.apply_name_visibility_to_item(ann)
                     
                 else:
                     continue  # clase desconocida
@@ -1932,6 +2112,9 @@ class ImageViewer(QMainWindow):
 
                     elif class_type == "polyline":
                         item_text = f"{self.class_names.get(class_id, 'NoLabel')} ({len(points)} pts)"
+
+                    elif class_type == "classification":
+                        item_text = f"{self.class_names.get(class_id, 'NoLabel')} (Clasificación)"
                     
                     item = QListWidgetItem(item_text)
                     item.setData(Qt.UserRole, ann)
@@ -2076,6 +2259,14 @@ class ImageViewer(QMainWindow):
                 'name': ann.name
             }
 
+        elif isinstance(ann, ClassificationAnnotationItem):
+            data = {
+                'type': 'classification',
+                'label': ann.label,
+                'color': ann.color,
+                'name': ann.name
+            }
+
         else:
             print("Tipo de anotación desconocido, no se puede copiar.")
             return
@@ -2127,6 +2318,18 @@ class ImageViewer(QMainWindow):
                 name=data['name'],
                 color=data['color']
             )
+
+        elif data['type'] == 'classification':
+            new_annotation = ClassificationAnnotationItem(
+                label=data['label'],
+                name=data['name'],
+                color=data['color']
+            )
+            y_offset = 10
+            for a in self.annotations:
+                if isinstance(a, ClassificationAnnotationItem):
+                    y_offset += 20
+            new_annotation.setPos(10, y_offset)
 
         if not new_annotation:
             print("Error: tipo de anotación no soportado para pegar.")

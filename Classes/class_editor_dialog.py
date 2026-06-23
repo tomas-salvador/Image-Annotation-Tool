@@ -125,7 +125,7 @@ class ClassEditorDialog(QDialog):
         
         # Selector de tipo
         type_combo = QComboBox()
-        type_combo.addItems(["box", "line", "polyline"])
+        type_combo.addItems(["box", "line", "polyline", "classification"])
         type_combo.setCurrentText(class_type)
         type_combo.currentTextChanged.connect(
             lambda t: self.update_class_type(class_id, t)
