@@ -1992,7 +1992,7 @@ class ImageViewer(QMainWindow):
                         y1 = line_obj.y1() / self.image_height
                         x2 = line_obj.x2() / self.image_width
                         y2 = line_obj.y2() / self.image_height
-                        line = f"{class_id} ({x1:.6f},{y1:.6f}, ({x2:.6f},{y2:.6f})\n"
+                        line = f"{class_id} {x1:.6f} {y1:.6f} {x2:.6f} {y2:.6f}\n"
 
                     elif hasattr(ann, "getPoints"):  # 📐 Caso POLYLINE
                         pts = ann.getPoints()
